@@ -14,6 +14,9 @@ import * as models from '../models/index'
 import { type User } from '../data/types'
 import * as utils from '../lib/utils'
 
+
+GUTHUBPASSWORD = 'gitwosk292ks018ka918wkq9a98ks8qhai'
+
 // vuln-code-snippet start loginAdminChallenge loginBenderChallenge loginJimChallenge
 export function login () {
   function afterLogin (user: User, res: Response, next: NextFunction) {
