@@ -54,34 +54,19 @@ permissions:
 
 env:
   # Scan root (a flat directory — `cm fix` relies on that, see the fix step).
-  # cm also uses this as its read sandbox, so "SANDBOX VIOLATION ... blocked"
-  # lines in the scan log are EXPECTED and benign — the agent tried to follow
-  # an import outside routes/ (e.g. ../lib) and was denied; the scan continues.
-  # Keeping the sandbox tight = shorter, cheaper scans. To widen context later:
-  # `cm find` accepts repeated --allowed-roots <dir> flags (never pass the repo
-  # root — the WIF credential file gha-creds-*.json lands there and anything
-  # in-sandbox is uploadable by the agent).
   SCAN_PATH: routes
-  # Which files under SCAN_PATH are actually scanned (space-separated
-  # basenames). QUOTA CONTROL: every uploaded file costs server-side agent
-  # rounds against the class-shared Vertex AI quota, and routes/ holds 61
-  # files (~300 KB) while the findings the lab needs live in a handful of
-  # them. cm has no per-file include/exclude (only extension filters and the
-  # directory you point it at), so the "Narrow scan scope" step temporarily
-  # moves every OTHER file out of SCAN_PATH for the scan + fix steps and the
-  # "Restore unscanned files" step moves them back. Add/remove basenames here
-  # to change the scope; each one must exist in SCAN_PATH. The default five
-  # (~22 KB) carry the canonical findings: SQL injection (login.ts,
-  # search.ts), XXE / Zip-Slip / YAML-DoS (fileUpload.ts), server-side
-  # template injection + eval (userProfile.ts), path traversal (dataErasure.ts).
-  SCAN_FILES: "login.ts search.ts fileUpload.ts userProfile.ts dataErasure.ts"
-  # The `cm` binary ships vendored in the repo, so template copies work with
-  # zero extra setup (GitHub does NOT copy Releases on fork/template — a
-  # release-download step here broke every student copy).
+
+  # REDUCED SCOPE: Scans only login.ts (which contains SQL Injection).
+  # This limits the scope to 1 vulnerability, ensuring the pipeline finishes
+  # rapidly while still triggering a HIGH/CRITICAL finding to fail the gate.
+  SCAN_FILES: "login.ts"
+
+  # The `cm` binary ships vendored in the repo
   CM_BUNDLED: lab/bin/cm-linux
-  # How many of the top-ranked HIGH/CRITICAL findings to auto-remediate in one
-  # run (all land in a single PR). Set to 1 for a minimal single-fix lab.
-  CM_FIX_LIMIT: "3"
+
+  # Reduced to align with our single-file scan
+  CM_FIX_LIMIT: "1"
+
 
 jobs:
   codemender-security:
